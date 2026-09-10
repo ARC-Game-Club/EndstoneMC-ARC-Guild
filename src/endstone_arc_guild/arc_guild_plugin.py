@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from endstone import Player
 from endstone.command import Command, CommandSender
+from endstone.event import event_handler, PlayerJoinEvent
 from endstone.plugin import Plugin
 
 from endstone_arc_guild.DatabaseManager import DatabaseManager
@@ -121,13 +122,20 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
             return
         self.economy.set_core(core)
         self.sync_bridge.set_core(core)
+        self.sync_bridge.set_on_applied(self._on_sync_applied)
         self.sync_bridge.register()
 
-        # 聊天前缀
+        # 聊天前缀：槽名 guild，priority=2；文本为公会名（无公会则清除）
         try:
             core.api_register_chat_prefix("guild", priority=2)
         except Exception as e:
             self.logger.warning(f"[ARC Guild] register chat prefix failed: {e}")
+        # 给当前在线且已入会的玩家补一次前缀
+        try:
+            for p in list(getattr(self.server, "online_players", []) or []):
+                self._set_guild_prefix_for(getattr(p, "xuid", ""))
+        except Exception:
+            pass
 
         # 主菜单：公会插件自行注册，核心不再内置
         try:
@@ -139,6 +147,23 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
             )
         except Exception as e:
             self.logger.warning(f"[ARC Guild] register main menu failed: {e}")
+
+    def _on_sync_applied(self, table: str, op: str, data: dict) -> None:
+        """跨服下行后刷新相关前缀（改名/升降级/入退会）。"""
+        try:
+            if table == "guilds":
+                gid = int((data or {}).get("id") or 0) if op != "full" else 0
+                if gid > 0:
+                    self._refresh_guild_prefix_for_guild(gid)
+                else:
+                    for p in list(getattr(self.server, "online_players", []) or []):
+                        self._set_guild_prefix_for(getattr(p, "xuid", ""))
+            elif table == "guild_members":
+                xs = str((data or {}).get("xuid") or "")
+                if xs:
+                    self._refresh_player_name_tag_by_xuid(xs)
+        except Exception as e:
+            self.logger.warning(f"[ARC Guild] sync applied hook error: {e}")
 
     # ── UI helpers expected by GuildMenusMixin ─────────────────────────────
     @property
@@ -233,6 +258,7 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
             self._update_player_name_tag(p)
 
     def _set_guild_prefix_for(self, xuid: Any) -> None:
+        """把公会名写入核心前缀槽 guild；无公会则清除显示。"""
         core = self._arc_core()
         if core is None:
             return
@@ -240,31 +266,47 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
         if not xuid_s:
             return
         try:
-            prefix = self.build_guild_chat_prefix(xuid_s)
-            core.api_set_player_chat_prefix("guild", prefix, xuid=xuid_s)
+            text = self.build_guild_chat_prefix(xuid_s)
+            core.api_set_player_chat_prefix("guild", text, xuid=xuid_s)
         except Exception as e:
             self.logger.warning(f"[ARC Guild] set prefix error: {e}")
 
     def build_guild_chat_prefix(self, xuid: str) -> str:
-        no_guild = self.language_manager.GetText("GUILD_DISPLAY_NO_GUILD_SHORT")
-        if not no_guild or not str(no_guild).strip():
-            no_guild = "[无公会]"
+        """有公会：带规模色的 [公会名]；无公会/查询失败：空串（清除前缀）。"""
         try:
             mem = self.guild_system.get_membership(str(xuid))
             if not mem:
-                return f"§f{no_guild}§r"
+                return ""
             gid = int(mem.get("guild_id") or 0)
             g = self.guild_system.get_guild(gid)
             if not g:
-                return f"§f{no_guild}§r"
+                return ""
             gname = strip_mc_color_codes(g.get("name")).strip()
             if not gname:
-                return f"§f{no_guild}§r"
+                return ""
             tier = self.guild_system.normalize_size_tier(g.get("size_tier"))
             color = self._guild_size_tier_color(tier)
             return f"{color}[{gname}]§r"
         except Exception:
-            return f"§f{no_guild}§r"
+            return ""
+
+    def _refresh_guild_prefix_for_guild(self, guild_id: int) -> None:
+        """公会改名/升降级/成员变动后，刷新该会在线成员前缀。"""
+        try:
+            for m in self.guild_system.list_members(int(guild_id)) or []:
+                self._refresh_player_name_tag_by_xuid(str(m.get("xuid") or ""))
+        except Exception as e:
+            self.logger.warning(f"[ARC Guild] refresh guild prefixes error: {e}")
+
+    @event_handler
+    def on_player_join(self, event: PlayerJoinEvent) -> None:
+        try:
+            player = event.player
+            self.run_player_task(
+                player, lambda p: self._set_guild_prefix_for(p.xuid), delay=4
+            )
+        except Exception:
+            pass
 
     def run_player_task(self, player: Player, fn: Callable[[Player], None], delay: int = 0):
         try:

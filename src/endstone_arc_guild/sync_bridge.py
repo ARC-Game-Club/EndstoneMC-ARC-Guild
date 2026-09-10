@@ -57,9 +57,14 @@ class GuildSyncBridge:
         self._core = None
         self._applying = threading.local()
         self._registered = False
+        self._on_applied = None
 
     def set_core(self, core) -> None:
         self._core = core
+
+    def set_on_applied(self, callback) -> None:
+        """下行应用成功后回调 on_applied(table, op, data)，用于刷新前缀等。"""
+        self._on_applied = callback
 
     def _in_apply(self) -> bool:
         return bool(getattr(self._applying, "flag", False))
@@ -102,15 +107,23 @@ class GuildSyncBridge:
                 for row in rows:
                     if not self._upsert_local(table, row):
                         ok = False
+                if ok:
+                    self._notify_applied(table, op, data)
                 return ok
             if op == "upsert":
-                return self._upsert_local(table, data)
+                ok = self._upsert_local(table, data)
+                if ok:
+                    self._notify_applied(table, op, data)
+                return ok
             if op == "delete":
                 where = data.get("_where") or ""
                 params = tuple(data.get("_params") or [])
                 if not where:
                     return False
-                return bool(self.db.delete(table, where, params))
+                ok = bool(self.db.delete(table, where, params))
+                if ok:
+                    self._notify_applied(table, op, data)
+                return ok
             return False
         except Exception as e:
             if self.logger:
@@ -118,6 +131,16 @@ class GuildSyncBridge:
             return False
         finally:
             self._applying.flag = False
+
+    def _notify_applied(self, table: str, op: str, data: Dict[str, Any]) -> None:
+        cb = self._on_applied
+        if cb is None:
+            return
+        try:
+            cb(table, op, data or {})
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"[ARC Guild] on_applied hook error: {e}")
 
     def _upsert_local(self, table: str, row: Dict[str, Any]) -> bool:
         if not row:
