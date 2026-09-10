@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "endstone_arc_guild"
+version = "0.1.0"
+dependencies = []
+authors = [
+    { name = "DEVILENMO", email = "DEVILENMO@gmail.com" },
+]
+description = "ARC Guild plugin for EndStone — guilds extracted from arc_core, cross-server via arc_core sync API."
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["endstone", "plugin", "guild", "arc"]
+
+[project.urls]
+Homepage = "https://github.com/ARC-Minecraft/EndstoneMC-ARC-Guild"
+
+[project.entry-points."endstone"]
+arc_guild = "endstone_arc_guild:ARCGuildPlugin"
