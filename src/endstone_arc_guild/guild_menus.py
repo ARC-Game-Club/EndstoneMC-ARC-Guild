@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """公会 UI（从弧光核心迁出；混入 ARCGuildPlugin）。"""
-from typing import Optional
+import json
+from typing import Any, Callable, Dict, List, Optional
+
 from endstone import Player
+from endstone.form import ActionForm, Dropdown, Label, ModalForm, TextInput
 
 from endstone_arc_guild.GuildSystem import (
     ROLE_MANAGER,
@@ -13,6 +16,23 @@ from endstone_arc_guild.GuildSystem import (
     SIZE_TIERS,
     strip_mc_color_codes as guild_strip_mc_color_codes,
 )
+
+GUILD_BROWSE_PAGE_SIZE = 18
+_GUILD_LAND_OWNER_PREFIX = "GUILD_"
+
+
+def parse_land_owner_guild_id(owner_key: Any) -> Optional[int]:
+    """与核心 LandSystem 解析规则一致：GUILD_<id>。"""
+    s = str(owner_key or "").strip()
+    if not s.startswith(_GUILD_LAND_OWNER_PREFIX):
+        return None
+    rest = s[len(_GUILD_LAND_OWNER_PREFIX) :].strip()
+    if not rest:
+        return None
+    try:
+        return int(rest)
+    except ValueError:
+        return None
 
 
 class GuildMenusMixin:
@@ -1053,7 +1073,7 @@ class GuildMenusMixin:
             )
             self.show_guild_lands_menu(player)
             return
-        ogid = LandSystem.parse_land_owner_guild_id(info.get("owner_xuid"))
+        ogid = parse_land_owner_guild_id(info.get("owner_xuid"))
         if ogid is None or int(ogid) != gid:
             player.send_message(
                 self._guild_text(
@@ -1128,7 +1148,7 @@ class GuildMenusMixin:
             )
             self.show_guild_lands_menu(player)
             return
-        ogid = LandSystem.parse_land_owner_guild_id(info.get("owner_xuid"))
+        ogid = parse_land_owner_guild_id(info.get("owner_xuid"))
         if ogid is None or int(ogid) != gid:
             player.send_message(
                 self._guild_text(

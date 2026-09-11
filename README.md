@@ -1,12 +1,12 @@
 # EndstoneMC-ARC-Guild / 弧光公会
 
-[![Version](https://img.shields.io/badge/version-v0.1.1-blue)](https://github.com/ARC-Minecraft/EndstoneMC-ARC-Guild)
+[![Version](https://img.shields.io/badge/version-v0.1.2-blue)](https://github.com/ARC-Minecraft/EndstoneMC-ARC-Guild)
 [![Python](https://img.shields.io/badge/python-3.13+-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![EndStone API](https://img.shields.io/badge/EndStone_API-0.10-black)](https://github.com/EndstoneMC/endstone)
 
 弧光公会插件（从 `arc_core` 完整拆出）。**依赖同服已安装的 arc_core ≥ v0.9.50**（经济、主菜单注册、聊天前缀、跨服同步 API）。
 
-- **版本**: 0.1.1
+- **版本**: 0.1.2
 - **插件 id**: `arc_guild`
 - **数据目录**: `plugins/ARCGuild/`（`guild.db`、`guild_setting.yml`、`ZH-CN.txt`）
 - **命令**: `/arcguild`、`/arcguildop`（OP）
@@ -43,7 +43,11 @@ pip install build && python -m build
 
 ## 更新日志
 
-### v0.1.1（当前版本）
+### v0.1.2（当前版本）
+
+- ✅ **修复加载失败**：`guild_menus` 补齐 `Callable`/`json`/表单组件等导入；`GUILD_BROWSE_PAGE_SIZE` 与公会领地 owner 解析改为插件内实现
+
+### v0.1.1
 
 - ✅ 公会名经核心注册制前缀提交：槽名 `guild`、priority=2；入会/改名/升降级/跨服下行后自动刷新
 - ✅ 无公会时清除前缀显示（不再固定显示 `[无公会]`）
