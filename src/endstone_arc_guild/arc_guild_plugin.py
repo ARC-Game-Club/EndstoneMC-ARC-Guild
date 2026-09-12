@@ -524,6 +524,35 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
         except Exception as e:
             return {"success": False, "error": str(e), "info": {}}
 
+    def api_add_personal_guild_contribution(
+        self, player_name: str = "", points: int = 0, xuid: str = ""
+    ) -> dict:
+        """只增加成员私人贡献点（不动公会公共池）；供 arc_hunter 等任务奖励调用。
+
+        返回 {"success": bool, "error": str, "info": {"personal": int, "guild_id": int}}。
+        """
+        xs = str(xuid or "").strip()
+        if not xs and player_name:
+            xs = self.get_player_xuid_by_name(player_name) or ""
+        info: dict = {"personal": 0, "guild_id": 0}
+        if not xs:
+            return {"success": False, "error": "GUILD_INVALID_PLAYER", "info": info}
+        try:
+            mem = self.guild_system.get_membership(xs)
+            if not mem:
+                return {"success": False, "error": "GUILD_NOT_IN_GUILD", "info": info}
+            gid = int(mem.get("guild_id") or 0)
+            if gid <= 0:
+                return {"success": False, "error": "GUILD_NOT_IN_GUILD", "info": info}
+            ok, err, new_personal = self.guild_system.change_member_contribution_in_guild(
+                gid, xs, int(points or 0)
+            )
+            info["guild_id"] = gid
+            info["personal"] = int(new_personal or 0)
+            return {"success": bool(ok), "error": err or "", "info": info}
+        except Exception as e:
+            return {"success": False, "error": str(e), "info": info}
+
     def api_get_player_guild_contribution(self, player_name: str = "", xuid: str = "") -> int:
         xs = str(xuid or "").strip()
         if not xs and player_name:
