@@ -144,6 +144,7 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
                 self.language_manager.GetText("GUILD_MENU_NAME") or "公会",
                 self.show_guild_main_menu,
                 priority=7,
+                icon="textures/arc_core/guild.png",
             )
         except Exception as e:
             self.logger.warning(f"[ARC Guild] register main menu failed: {e}")
