@@ -15,7 +15,7 @@ license = { file = "LICENSE" }
 keywords = ["endstone", "plugin", "guild", "arc"]
 
 [project.urls]
-Homepage = "https://github.com/ARC-Minecraft/EndstoneMC-ARC-Guild"
+Homepage = "https://github.com/ARC-Game-Club/EndstoneMC-ARC-Guild"
 
 [project.entry-points."endstone"]
 arc_guild = "endstone_arc_guild:ARCGuildPlugin"

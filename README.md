@@ -1,6 +1,6 @@
 # EndstoneMC-ARC-Guild / 弧光公会
 
-[![Version](https://img.shields.io/badge/version-v0.1.3-blue)](https://github.com/ARC-Minecraft/EndstoneMC-ARC-Guild)
+[![Version](https://img.shields.io/badge/version-v0.1.3-blue)](https://github.com/ARC-Game-Club/EndstoneMC-ARC-Guild)
 [![Python](https://img.shields.io/badge/python-3.13+-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![EndStone API](https://img.shields.io/badge/EndStone_API-0.10-black)](https://github.com/EndstoneMC/endstone)
 
