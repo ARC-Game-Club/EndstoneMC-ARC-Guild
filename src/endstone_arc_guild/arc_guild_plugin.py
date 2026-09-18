@@ -231,11 +231,18 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
             self._strip_arc_message_prefix(msg),
         )
 
-    def get_player_name_by_xuid(self, xuid: str) -> str:
+    def get_player_name_by_xuid(
+        self, xuid: str, return_with_title: bool = False
+    ) -> str:
         core = self._arc_core()
         if core is not None:
             try:
-                return str(core.api_get_player_name_by_xuid(xuid) or "")
+                return str(
+                    core.api_get_player_name_by_xuid(
+                        xuid, with_title=bool(return_with_title)
+                    )
+                    or ""
+                )
             except Exception:
                 pass
         p = self._find_online_player_by_xuid(xuid)
