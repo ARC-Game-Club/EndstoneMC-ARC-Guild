@@ -104,7 +104,7 @@ class ARCGuildPlugin(GuildMenusMixin, Plugin):
     # ── core bridge ────────────────────────────────────────────────────────
     def _arc_core(self):
         try:
-            return self.server.get_plugin("arc_core")
+            return self.server.plugin_manager.get_plugin("arc_core")
         except Exception:
             return None
 
